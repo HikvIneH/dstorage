@@ -51,8 +51,8 @@ class App extends Component {
       //Get files amount
       const filesCount = await dstorage.methods.fileCount().call()
       //Load files&sort by the newest
-      for (let i = filesCount; i >= 1; i--) {
-        const file = await DStorage.methods.files(i).call()
+      for (var i = filesCount; i >= 1; i--) {
+        const file = await dstorage.methods.files(i).call()
         this.setState({
           files: [...this.state.files, file]
         })
@@ -86,18 +86,36 @@ class App extends Component {
 
   //Upload File
   uploadFile = description => {
-
     //Add file to the IPFS
+    ipfs.add(this.state.buffer, (error, result) => {
+      console.log('IPFS Result: ', result)  
+      const data = result[0]
 
-    //Check If error
-    //Return error
+      if(error) {
+        console.error(error)
+        return
+      }
 
-    //Set state to loading
+      this.setState({loading: true})
 
-    //Assign value for the file without extension
-
-    //Call smart contract uploadFile function 
-
+      //Assign value for the file without extension
+      if(this.state.type === '') {
+        this.setState({type: 'none'})
+      }
+  
+      //Call smart contract uploadFile function 
+      this.state.dstorage.methods.uploadFile(data.hash, data.size, this.state.type, this.state.name, description).send({from: this.state.account}).on('transactionHash', (hash) => {
+        this.setState({
+          loading: false,
+          type: null,
+          name: null
+        })
+        window.location.reload()
+      }).on('error', (err) => {
+        window.alert('Error')
+        this.setState({loading:false})
+      })
+    })
   }
 
   //Set states
